@@ -10,7 +10,7 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 
 ## Status
 
-**M4 — Tier 2 compile suite runnable (ripgrep, TypeScript tsc + tsgo, kubernetes, LLVM, DuckDB, Linux kernel).** Tier 3 runtime + Windows orchestrator next.
+**M6 — Tiers 1–3 runnable.** Tier 3 adds pandas pytest, Vite test suite, Renaissance JVM, multi-stage Docker Rust build. Next: Windows orchestrator (M5), Tier 6/7 (dev-velocity + local AI).
 
 ### Full pipeline (macOS / Linux / WSL)
 
@@ -18,7 +18,8 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 ./scripts/macos/bootstrap.sh --baseline --toolchains   # or scripts/linux/bootstrap.sh
 ./scripts/run.sh --tier 1 --iterations 3               # synthetic, ~10 min
 ./scripts/run.sh --tier 2 --iterations 2               # compile, ~1-3h (LLVM dominates)
-./scripts/run.sh --tier 1,2 --iterations 2             # both
+./scripts/run.sh --tier 3 --iterations 3               # runtime/tests, ~20-40 min
+./scripts/run.sh --tier 1,2,3 --iterations 2           # everything that exists today
 # -> results/<hostname>-<UTC timestamp>/run.json
 ```
 
@@ -46,6 +47,12 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 ./workloads/compile/kubernetes/run.sh --variant cold
 ./workloads/compile/llvm/run.sh --variant cold_jN          # ~15-30min!
 ./workloads/compile/llvm/run.sh --variant cold_j1          # ~1-2h (single-thread signal)
+
+# Individual Tier 3 workloads
+./workloads/runtime/pytest_pandas/run.sh --variant parallel  # ~3-10 min
+./workloads/runtime/vite_tests/run.sh                         # ~30-90s
+./workloads/runtime/renaissance/run.sh                        # ~3-5 min (subset)
+./workloads/runtime/docker_build_rust/run.sh --variant cold   # ~1-3 min
 ```
 
 ### Windows (probe + self-test only until M5)

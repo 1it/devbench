@@ -120,8 +120,19 @@ compile.ripgrep.cold_mold|2||$REPO_ROOT/workloads/compile/ripgrep/run.sh --varia
 EOF
       fi
       ;;
-    3|4|5|6|7)
-      log_warn "tier $tier specs not yet implemented (coming in M6+)"
+    3)
+      # Tier 3 runtime / test execution. Each workload is minutes-long, not hours.
+      cat <<EOF
+runtime.pytest_pandas.parallel|3||$REPO_ROOT/workloads/runtime/pytest_pandas/run.sh --variant parallel
+runtime.pytest_pandas.serial|3||$REPO_ROOT/workloads/runtime/pytest_pandas/run.sh --variant serial
+runtime.vite_tests|3||$REPO_ROOT/workloads/runtime/vite_tests/run.sh
+runtime.renaissance|3||$REPO_ROOT/workloads/runtime/renaissance/run.sh
+runtime.docker_build_rust.cold|3||$REPO_ROOT/workloads/runtime/docker_build_rust/run.sh --variant cold
+runtime.docker_build_rust.warm|3||$REPO_ROOT/workloads/runtime/docker_build_rust/run.sh --variant warm
+EOF
+      ;;
+    4|5|6|7)
+      log_warn "tier $tier specs not yet implemented (coming in M7+)"
       ;;
     *) die "unknown tier: $tier" ;;
   esac

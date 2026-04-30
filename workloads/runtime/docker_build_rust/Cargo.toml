@@ -1,0 +1,21 @@
+[package]
+name = "devbench-dockerload"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Pinned representative dev-deps — enough work to take ~30-60s to compile release
+# but not so many it turns into a megabuild. tokio + serde + clap is the common trio.
+[dependencies]
+tokio      = { version = "1.40", features = ["full"] }
+serde      = { version = "1.0",  features = ["derive"] }
+serde_json = "1.0"
+clap       = { version = "4.5",  features = ["derive"] }
+anyhow     = "1.0"
+tracing    = "0.1"
+tracing-subscriber = "0.3"
+reqwest    = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
