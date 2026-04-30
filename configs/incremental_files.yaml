@@ -1,0 +1,32 @@
+# For each compile workload that has an "incremental" variant, we pin the exact file
+# whose mtime we bump to trigger a partial rebuild. This is critical for reproducibility:
+# rebuilding a leaf file vs a deeply-included header tests very different code paths.
+#
+# Criteria for picking a file:
+#   - mid-depth in the dependency graph (not a leaf, not the root)
+#   - many dependants so a non-trivial chunk of the graph rebuilds
+#   - stable across multiple versions of the project
+
+llvm:
+  tag: llvmorg-22.1.4
+  file: llvm/lib/Analysis/ValueTracking.cpp
+
+linux_kernel:
+  tag: v6.18
+  file: mm/page_alloc.c
+
+ripgrep:
+  tag: "15.1.0"
+  file: crates/core/flags/defs.rs
+
+typescript:
+  tag: v6.0.3
+  file: src/compiler/checker.ts
+
+kubernetes:
+  tag: v1.35.3
+  file: pkg/scheduler/schedule_one.go
+
+duckdb:
+  tag: v1.5.2
+  file: src/execution/operator/join/physical_hash_join.cpp

@@ -2,10 +2,13 @@ schema_version: 1
 devbench_version: 0.1.0
 
 defaults:
-  iterations: 3
+  iterations_long: 3     # compiles, AI inference, anything > 60s
+  iterations_short: 10   # synthetic microbench, hyperfine default-ish
   cold_between_iterations: true
   warn_on_throttle: true
   max_ambient_cpu_pct: 3.0
+  min_median_delta_pct: 5.0    # below this => "within noise"
+  outlier_max_per_10_runs: 2
 
 tiers:
   "1":
@@ -21,13 +24,16 @@ tiers:
       - llvm_cold_jN
       - llvm_warm_jN
       - llvm_incremental
-      - linux_kernel_jN          # linux+wsl only
+      - linux_kernel_jN              # linux+wsl only
       - ripgrep_cold
+      - ripgrep_cold_mold             # linux-only variant
       - ripgrep_incremental
-      - typescript_self
-      - kubernetes_go_build
+      - typescript_tsc_self           # legacy tsc (v6)
+      - typescript_tsgo_typecheck     # new tsgo (v7 preview)
+      - kubernetes_go_build_cold
+      - kubernetes_go_build_warm
       - duckdb_cold
-      - swift_pkg_cold            # mac+linux only
+      - swift_pkg_cold                # mac+linux only
 
   "3":
     name: runtime
@@ -42,30 +48,75 @@ tiers:
   "5":
     name: emulation
     enabled: false   # opt-in
-    workloads: [llvm_rosetta, docker_amd64_on_arm]
+    workloads: [llvm_rosetta, docker_amd64_on_arm, llvm_prism_arm_win]
 
+  "6":
+    name: dev_velocity
+    enabled: true
+    workloads: [uv_install_stack, pnpm_install_nextjs, bun_install_nextjs, ruff_pandas, clippy_ripgrep, vite_dev_coldstart, esbuild_bundle]
+
+  "7":
+    name: ai_inference
+    enabled: true
+    workloads:
+      - llamacpp_qwen25coder7b_cpu
+      - llamacpp_qwen25coder7b_accel   # metal/cuda/vulkan/qnn per-host
+      - mlx_qwen25coder7b               # mac only
+      - whispercpp_10min
+      - llamacpp_embed_nomic
+
+# Pinned versions (upgrade in a single PR, never ad-hoc).
 versions:
-  llvm_tag: "llvmorg-19.1.7"
-  linux_kernel_tag: "v6.11"
-  ripgrep_tag: "14.1.1"
-  typescript_tag: "v5.6.3"
-  kubernetes_tag: "v1.31.3"
-  duckdb_tag: "v1.1.3"
-  pandas_tag: "v2.2.3"
-  nextjs_tag: "v15.0.3"
-  renaissance_version: "0.16.0"
-  linux_repo_tag: "v6.11"        # used by tier 4 dev-day workload
+  llvm_tag: "llvmorg-22.1.4"
+  linux_kernel_tag: "v6.18"
+  linux_repo_tag: "v6.18"              # used by tier 4 dev-day workload
+  ripgrep_tag: "15.1.0"
+  typescript_tag: "v6.0.3"
+  tsgo_pkg: "@typescript/native-preview@beta"   # 7.0 beta, the Go-based tsgo
+  kubernetes_tag: "v1.35.3"
+  duckdb_tag: "v1.5.2"
+  pandas_tag: "v3.0.2"
+  nextjs_tag: "v16.2.4"
+  renaissance_version: "0.16.1"
+  whisper_cpp_tag: "v1.7.4"
+  llama_cpp_tag: "b4100"               # update in lock-step; write the exact release
+  mlx_version: "0.20.0"
+  qwen_coder_model: "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
+  nomic_embed_model: "nomic-embed-text-v1.5-Q4_K_M.gguf"
+
+  go_min: "1.26.2"
+  rust_min: "1.95.0"
+  node_min: "24.0.0"                   # Krypton LTS
+  python_min: "3.13"
+  typescript_min: "6.0.3"
+  swift_min: "6.3"
+  docker_min: "29.4.1"
 
   sysbench_min: "1.0.20"
-  fio_min: "3.36"
+  fio_min: "3.37"
   sevenzip_min: "23.01"
   ninja_min: "1.12.0"
   cmake_min: "3.30.0"
-  go_min: "1.23.0"
-  rust_min: "1.82.0"
-  node_min: "22.11.0"
-  python_min: "3.12"
-  docker_min: "27.0.0"
+  hyperfine_min: "1.18.0"
+  mold_min: "2.35.0"
+  uv_min: "0.5.0"
+  pnpm_min: "9.12.0"
+  bun_min: "1.1.38"
+  ruff_min: "0.8.0"
+  vite_min: "6.0.0"
+  esbuild_min: "0.24.0"
+
+platforms:
+  macos:
+    docker_runtime: orbstack          # headline; side-experiments also run desktop+colima+podman
+  linux:
+    cpu_governor_default: schedutil   # distro default; also run "performance"
+    docker_runtime: native
+  windows_x64:
+    docker_runtime: docker_desktop    # wsl2 backend
+    defender_on: true                 # side run with defender_off for compile tier only
+  windows_arm64:
+    docker_runtime: docker_desktop
 
 paths:
   source_cache: workloads/_src
