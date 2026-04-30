@@ -10,15 +10,19 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 
 ## Status
 
-**M3 — Tier 1 synthetic suite + top-level orchestrator runnable.** Tier 2 compile suite next (M4).
+**M4 — Tier 2 compile suite runnable (ripgrep, TypeScript tsc + tsgo, kubernetes, LLVM, DuckDB, Linux kernel).** Tier 3 runtime + Windows orchestrator next.
 
 ### Full pipeline (macOS / Linux / WSL)
 
 ```bash
-./scripts/macos/bootstrap.sh --baseline           # or scripts/linux/bootstrap.sh
-./scripts/run.sh --tier 1 --iterations 3
+./scripts/macos/bootstrap.sh --baseline --toolchains   # or scripts/linux/bootstrap.sh
+./scripts/run.sh --tier 1 --iterations 3               # synthetic, ~10 min
+./scripts/run.sh --tier 2 --iterations 2               # compile, ~1-3h (LLVM dominates)
+./scripts/run.sh --tier 1,2 --iterations 2             # both
 # -> results/<hostname>-<UTC timestamp>/run.json
 ```
+
+> **Tier 2 note**: use `--iterations 2` (not 3) unless you have all day. LLVM cold_jN alone is ~15–30 min per iteration. For a first signal run just the fast ones with `--tier 2` after editing the spec list in `scripts/run.sh`, or run a single workload directly.
 
 ### Runnable building blocks
 
@@ -33,6 +37,15 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 ./workloads/synthetic/sysbench_cpu/run.sh --threads $(sysctl -n hw.logicalcpu)
 ./workloads/synthetic/sevenzip/run.sh
 ./workloads/synthetic/fio/run.sh --profile 4k_qd1 --scratch-dir /tmp/devbench
+
+# Individual Tier 2 workloads (clone + build pinned tag)
+./workloads/compile/ripgrep/run.sh --variant cold          # ~30-90s
+./workloads/compile/ripgrep/run.sh --variant incremental   # ~1-10s
+./workloads/compile/typescript/run.sh --variant tsc_cold
+./workloads/compile/typescript/run.sh --variant tsgo_typecheck
+./workloads/compile/kubernetes/run.sh --variant cold
+./workloads/compile/llvm/run.sh --variant cold_jN          # ~15-30min!
+./workloads/compile/llvm/run.sh --variant cold_j1          # ~1-2h (single-thread signal)
 ```
 
 ### Windows (probe + self-test only until M5)

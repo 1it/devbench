@@ -93,8 +93,35 @@ synthetic.fio.seq|1||$REPO_ROOT/workloads/synthetic/fio/run.sh --profile seq --s
 synthetic.fio.mixed|1||$REPO_ROOT/workloads/synthetic/fio/run.sh --profile mixed --scratch-dir $scratch --size 2G --runtime 15
 EOF
       ;;
-    2|3|4|5|6|7)
-      log_warn "tier $tier specs not yet implemented (coming in M4+)"
+    2)
+      # Compile tier. These take minutes to tens of minutes; default iterations
+      # in the orchestrator should be tuned lower (2) when --tier 2 is active.
+      cat <<EOF
+compile.ripgrep.cold|2||$REPO_ROOT/workloads/compile/ripgrep/run.sh --variant cold
+compile.ripgrep.warm|2||$REPO_ROOT/workloads/compile/ripgrep/run.sh --variant warm
+compile.ripgrep.incremental|2||$REPO_ROOT/workloads/compile/ripgrep/run.sh --variant incremental
+compile.typescript.tsc_cold|2||$REPO_ROOT/workloads/compile/typescript/run.sh --variant tsc_cold
+compile.typescript.tsc_incremental|2||$REPO_ROOT/workloads/compile/typescript/run.sh --variant tsc_incremental
+compile.typescript.tsgo_typecheck|2||$REPO_ROOT/workloads/compile/typescript/run.sh --variant tsgo_typecheck
+compile.kubernetes.cold|2||$REPO_ROOT/workloads/compile/kubernetes/run.sh --variant cold
+compile.kubernetes.warm|2||$REPO_ROOT/workloads/compile/kubernetes/run.sh --variant warm
+compile.llvm.cold_jN|2||$REPO_ROOT/workloads/compile/llvm/run.sh --variant cold_jN
+compile.llvm.cold_j1|2||$REPO_ROOT/workloads/compile/llvm/run.sh --variant cold_j1
+compile.llvm.warm_jN|2||$REPO_ROOT/workloads/compile/llvm/run.sh --variant warm_jN
+compile.llvm.incremental|2||$REPO_ROOT/workloads/compile/llvm/run.sh --variant incremental
+compile.duckdb.cold|2||$REPO_ROOT/workloads/compile/duckdb/run.sh --variant cold
+EOF
+      # Linux-only extras
+      if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
+        cat <<EOF
+compile.linux_kernel.cold_jN|2||$REPO_ROOT/workloads/compile/linux_kernel/run.sh --variant cold_jN
+compile.linux_kernel.incremental|2||$REPO_ROOT/workloads/compile/linux_kernel/run.sh --variant incremental
+compile.ripgrep.cold_mold|2||$REPO_ROOT/workloads/compile/ripgrep/run.sh --variant cold_mold
+EOF
+      fi
+      ;;
+    3|4|5|6|7)
+      log_warn "tier $tier specs not yet implemented (coming in M6+)"
       ;;
     *) die "unknown tier: $tier" ;;
   esac
