@@ -1,0 +1,17 @@
+results/*
+!results/.gitkeep
+!results/examples/
+
+workloads/_src/
+workloads/_build/
+*.log
+*.tmp
+
+.DS_Store
+Thumbs.db
+.venv/
+__pycache__/
+*.pyc
+
+.vscode/
+.idea/

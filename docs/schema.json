@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ivanturzhilkin/devbench/schema/run.json",
+  "title": "devbench run",
+  "type": "object",
+  "required": ["schema_version", "host", "runtime", "results"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "host": {
+      "type": "object",
+      "required": ["hostname", "os", "cpu", "ram_gb", "storage"],
+      "properties": {
+        "hostname": { "type": "string" },
+        "os": {
+          "type": "object",
+          "required": ["name", "version", "arch"],
+          "properties": {
+            "name": { "enum": ["macos", "linux", "windows"] },
+            "version": { "type": "string" },
+            "arch": { "enum": ["arm64", "x86_64"] },
+            "kernel": { "type": "string" }
+          }
+        },
+        "cpu": {
+          "type": "object",
+          "required": ["model", "cores_total"],
+          "properties": {
+            "model": { "type": "string" },
+            "vendor": { "type": "string" },
+            "cores_total": { "type": "integer" },
+            "cores_performance": { "type": "integer" },
+            "cores_efficiency": { "type": "integer" },
+            "threads_total": { "type": "integer" },
+            "base_ghz": { "type": "number" },
+            "boost_ghz": { "type": "number" }
+          }
+        },
+        "ram_gb": { "type": "number" },
+        "ram_speed_mts": { "type": "integer" },
+        "ram_channels": { "type": "integer" },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "model": { "type": "string" },
+            "filesystem": { "type": "string" },
+            "size_gb": { "type": "number" }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["started", "ended", "power_source"],
+      "properties": {
+        "started": { "type": "string", "format": "date-time" },
+        "ended": { "type": "string", "format": "date-time" },
+        "power_source": { "enum": ["ac", "battery", "unknown"] },
+        "ambient_cpu_pct": { "type": "number" },
+        "ambient_ram_used_gb": { "type": "number" },
+        "devbench_version": { "type": "string" },
+        "config_sha": { "type": "string" }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "tier", "iterations"],
+        "properties": {
+          "id": { "type": "string", "description": "dotted workload id e.g. compile.llvm.cold.jN" },
+          "tier": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "tool_version": { "type": "string" },
+          "source_rev": { "type": "string", "description": "pinned commit or tag" },
+          "cold": { "type": "boolean" },
+          "parallelism": { "type": "integer" },
+          "iterations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["wallclock_s"],
+              "properties": {
+                "wallclock_s": { "type": "number" },
+                "user_s": { "type": "number" },
+                "sys_s": { "type": "number" },
+                "peak_rss_mb": { "type": "number" },
+                "avg_package_w": { "type": "number" },
+                "energy_j": { "type": "number" },
+                "cpu_temp_c": {
+                  "type": "object",
+                  "properties": {
+                    "start": { "type": "number" },
+                    "mid": { "type": "number" },
+                    "end": { "type": "number" }
+                  }
+                },
+                "throttled": { "type": "boolean" },
+                "extra": { "type": "object", "description": "workload-specific fields" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

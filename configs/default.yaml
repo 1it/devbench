@@ -1,0 +1,73 @@
+schema_version: 1
+devbench_version: 0.1.0
+
+defaults:
+  iterations: 3
+  cold_between_iterations: true
+  warn_on_throttle: true
+  max_ambient_cpu_pct: 3.0
+
+tiers:
+  "1":
+    name: synthetic
+    enabled: true
+    workloads: [sysbench_cpu_st, sysbench_cpu_mt, stream, sevenzip_bench, fio_4k_qd1, fio_seq, fio_mixed]
+
+  "2":
+    name: compile
+    enabled: true
+    workloads:
+      - llvm_cold_j1
+      - llvm_cold_jN
+      - llvm_warm_jN
+      - llvm_incremental
+      - linux_kernel_jN          # linux+wsl only
+      - ripgrep_cold
+      - ripgrep_incremental
+      - typescript_self
+      - kubernetes_go_build
+      - duckdb_cold
+      - swift_pkg_cold            # mac+linux only
+
+  "3":
+    name: runtime
+    enabled: true
+    workloads: [pytest_pandas, node_nextjs_test, renaissance_jvm, docker_build_rust]
+
+  "4":
+    name: devday
+    enabled: true
+    workloads: [git_status, git_log_count, rg_search, fd_traversal, git_grep, git_blame_large, git_checkout_tag]
+
+  "5":
+    name: emulation
+    enabled: false   # opt-in
+    workloads: [llvm_rosetta, docker_amd64_on_arm]
+
+versions:
+  llvm_tag: "llvmorg-19.1.7"
+  linux_kernel_tag: "v6.11"
+  ripgrep_tag: "14.1.1"
+  typescript_tag: "v5.6.3"
+  kubernetes_tag: "v1.31.3"
+  duckdb_tag: "v1.1.3"
+  pandas_tag: "v2.2.3"
+  nextjs_tag: "v15.0.3"
+  renaissance_version: "0.16.0"
+  linux_repo_tag: "v6.11"        # used by tier 4 dev-day workload
+
+  sysbench_min: "1.0.20"
+  fio_min: "3.36"
+  sevenzip_min: "23.01"
+  ninja_min: "1.12.0"
+  cmake_min: "3.30.0"
+  go_min: "1.23.0"
+  rust_min: "1.82.0"
+  node_min: "22.11.0"
+  python_min: "3.12"
+  docker_min: "27.0.0"
+
+paths:
+  source_cache: workloads/_src
+  build_scratch: workloads/_build
+  results_root: results
