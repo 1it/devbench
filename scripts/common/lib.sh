@@ -57,3 +57,50 @@ json_str() {
   require_cmd jq
   jq -Rs . <<< "$1"
 }
+
+# Assemble one iteration JSON object from named fields.
+# Usage:
+#   emit_iteration \
+#       --wallclock 12.3 \
+#       [--user 8.1] [--sys 0.4] [--peak-rss-mb 420] \
+#       [--package-w 45] [--energy-j 1200] \
+#       [--throttled false] \
+#       [--extra '{"events_per_sec": 1234}']
+emit_iteration() {
+  require_cmd jq
+  local wall="" user="" sys="" rss="" pkgw="" ej="" throttled="" extra="{}"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --wallclock)   wall="$2";      shift 2 ;;
+      --user)        user="$2";      shift 2 ;;
+      --sys)         sys="$2";       shift 2 ;;
+      --peak-rss-mb) rss="$2";       shift 2 ;;
+      --package-w)   pkgw="$2";      shift 2 ;;
+      --energy-j)    ej="$2";        shift 2 ;;
+      --throttled)   throttled="$2"; shift 2 ;;
+      --extra)       extra="$2";     shift 2 ;;
+      *) die "emit_iteration: unknown arg $1" ;;
+    esac
+  done
+  [[ -n "$wall" ]] || die "emit_iteration: --wallclock required"
+
+  jq -n \
+    --arg wall "$wall" \
+    --arg user "$user" \
+    --arg sys "$sys" \
+    --arg rss "$rss" \
+    --arg pkgw "$pkgw" \
+    --arg ej "$ej" \
+    --arg throttled "$throttled" \
+    --argjson extra "$extra" \
+    '{
+      wallclock_s: ($wall|tonumber),
+      user_s:  (if $user == "" then null else ($user|tonumber) end),
+      sys_s:   (if $sys  == "" then null else ($sys |tonumber) end),
+      peak_rss_mb: (if $rss == "" then null else ($rss|tonumber) end),
+      avg_package_w: (if $pkgw == "" then null else ($pkgw|tonumber) end),
+      energy_j: (if $ej == "" then null else ($ej|tonumber) end),
+      throttled: (if $throttled == "" then null elif $throttled == "true" then true else false end),
+      extra: $extra
+    }'
+}
