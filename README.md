@@ -10,7 +10,27 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 
 ## Status
 
-**M1 — scaffolding.** Nothing runnable yet.
+**M2 — host probes + self-test + bootstrap scaffolding runnable.** Tier-1 synthetic suite next (M3).
+
+Runnable today:
+
+```bash
+# macOS (works; probe + self-test validated on M1 Pro)
+./scripts/macos/bootstrap.sh --baseline
+./scripts/common/self_test.sh          # calibration, fails if CV > 3%
+./scripts/macos/probe.sh               # emits host JSON
+./scripts/common/runtime_init.sh --config configs/default.yaml
+
+# Linux (written, untested here — apt/dnf both supported)
+./scripts/linux/bootstrap.sh --baseline
+./scripts/common/self_test.sh
+./scripts/linux/probe.sh
+
+# Windows (written, untested here — PS7 + winget)
+.\scripts\windows\bootstrap.ps1
+.\scripts\common\self_test.ps1
+.\scripts\windows\probe.ps1
+```
 
 ## Layout
 
