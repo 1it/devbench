@@ -92,6 +92,11 @@ Purpose: sanity check, cross-reference with public numbers.
 | Storage seq | SSD throughput | `fio` |
 | Storage mixed | realistic dev pattern | `fio` (iomix profile) |
 
+Storage profiles use the same logical fio job parameters across platforms, while
+using native async I/O engines (`posixaio` on macOS, `libaio` on Linux/WSL).
+Results record the engine, scratch directory, mount point, filesystem, direct
+I/O flag, and job parameters so cross-platform deltas can be audited.
+
 ### Tier 2 — Compilation (the main event, ~1–2 h total)
 
 Purpose: the workload developers actually wait on. Hammers cache, memory bandwidth, FS, scheduler, linker.

@@ -32,6 +32,24 @@ done
 [[ -n "$profile" ]] || die "--profile required"
 [[ -n "$scratch" ]] || die "--scratch-dir required"
 mkdir -p "$scratch"
+scratch_abs="$(cd "$scratch" && pwd -P)"
+test_file="$scratch_abs/fiotest"
+
+mount_device="$(df -P "$scratch_abs" | awk 'NR==2{print $1}')"
+mount_point="$(df -P "$scratch_abs" | awk 'NR==2{print $6}')"
+filesystem=""
+case "$(uname -s)" in
+  Darwin)
+    filesystem="$(diskutil info "$mount_device" 2>/dev/null | awk -F': *' '/Type \(Bundle\)/{print $2; exit}' || true)"
+    [[ -z "$filesystem" ]] && filesystem="$(diskutil info "$mount_device" 2>/dev/null | awk -F': *' '/File System Personality/{print $2; exit}' || true)"
+    ;;
+  Linux)
+    if command -v findmnt >/dev/null 2>&1; then
+      filesystem="$(findmnt -no FSTYPE -T "$scratch_abs" 2>/dev/null | head -n1 || true)"
+    fi
+    ;;
+esac
+[[ -z "$filesystem" ]] && filesystem="unknown"
 
 # Per-profile fio args, all writing to $scratch/fiotest.
 # We use --output=<file> rather than capturing stdout, because fio writes
@@ -48,11 +66,11 @@ case "$(uname -s)" in
 esac
 
 tmpjson="$(mktemp)"
-trap 'rm -f "$tmpjson" "$scratch/fiotest"' EXIT
+trap 'rm -f "$tmpjson" "$test_file"' EXIT
 
 common_args=(
   "--name=devbench"
-  "--filename=$scratch/fiotest"
+  "--filename=$test_file"
   "--size=$size"
   "--runtime=${runtime}s"
   "--time_based"
@@ -67,34 +85,49 @@ common_args=(
 
 case "$profile" in
   4k_qd1)
+    rw="randread"
+    bs="4k"
+    iodepth=1
+    numjobs=1
+    rwmixread=""
     args=(
-      "--rw=randread"
-      "--bs=4k"
-      "--iodepth=1"
-      "--numjobs=1"
+      "--rw=$rw"
+      "--bs=$bs"
+      "--iodepth=$iodepth"
+      "--numjobs=$numjobs"
     )
     ;;
   seq)
+    rw="read"
+    bs="1m"
+    iodepth=32
+    numjobs=1
+    rwmixread=""
     args=(
-      "--rw=read"
-      "--bs=1m"
-      "--iodepth=32"
-      "--numjobs=1"
+      "--rw=$rw"
+      "--bs=$bs"
+      "--iodepth=$iodepth"
+      "--numjobs=$numjobs"
     )
     ;;
   mixed)
+    rw="randrw"
+    bs="16k"
+    iodepth=16
+    numjobs=4
+    rwmixread=70
     args=(
-      "--rw=randrw"
-      "--rwmixread=70"
-      "--bs=16k"
-      "--iodepth=16"
-      "--numjobs=4"
+      "--rw=$rw"
+      "--rwmixread=$rwmixread"
+      "--bs=$bs"
+      "--iodepth=$iodepth"
+      "--numjobs=$numjobs"
     )
     ;;
   *) die "unknown profile: $profile (expected 4k_qd1|seq|mixed)" ;;
 esac
 
-log_info "fio profile=$profile size=$size runtime=${runtime}s scratch=$scratch ioengine=$ioengine"
+log_info "fio profile=$profile size=$size runtime=${runtime}s scratch=$scratch_abs ioengine=$ioengine fs=$filesystem"
 
 t0="$(date +%s.%N 2>/dev/null || python3 -c 'import time;print(time.time())')"
 fio "${common_args[@]}" "${args[@]}" >/dev/null
@@ -103,13 +136,46 @@ wall_s="$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.3f", b-a}')"
 
 # fio json has jobs[].read and jobs[].write, each with bw (KiB/s), iops, and clat_ns percentiles.
 # We combine read+write metrics into one `extra` block for uniformity.
-extra="$(jq --arg profile "$profile" --arg size "$size" --argjson rt "$runtime" '
+extra="$(jq \
+  --arg profile "$profile" \
+  --arg size "$size" \
+  --argjson rt "$runtime" \
+  --arg ioengine "$ioengine" \
+  --arg scratch_dir "$scratch_abs" \
+  --arg test_file "$test_file" \
+  --arg mount_device "$mount_device" \
+  --arg mount_point "$mount_point" \
+  --arg filesystem "$filesystem" \
+  --arg rw "$rw" \
+  --arg bs "$bs" \
+  --argjson iodepth "$iodepth" \
+  --argjson numjobs "$numjobs" \
+  --arg rwmixread "$rwmixread" \
+  '
   .jobs[0] as $j |
   {
     tool: "fio",
     profile: $profile,
     size: $size,
     runtime_s: $rt,
+    ioengine: $ioengine,
+    direct: true,
+    thread: true,
+    ramp_time_s: 2,
+    scratch_dir: $scratch_dir,
+    test_file: $test_file,
+    mount: {
+      device: $mount_device,
+      point: $mount_point,
+      filesystem: $filesystem
+    },
+    job: {
+      rw: $rw,
+      bs: $bs,
+      iodepth: $iodepth,
+      numjobs: $numjobs,
+      rwmixread: (if $rwmixread == "" then null else ($rwmixread|tonumber) end)
+    },
     read: {
       bw_kib_s: ($j.read.bw // 0),
       iops: ($j.read.iops // 0),

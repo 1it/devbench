@@ -79,21 +79,22 @@
               "type": "object",
               "required": ["wallclock_s"],
               "properties": {
-                "wallclock_s": { "type": "number" },
-                "user_s": { "type": "number" },
-                "sys_s": { "type": "number" },
-                "peak_rss_mb": { "type": "number" },
-                "avg_package_w": { "type": "number" },
-                "energy_j": { "type": "number" },
+                "wallclock_s": { "type": ["number", "null"] },
+                "user_s": { "type": ["number", "null"] },
+                "sys_s": { "type": ["number", "null"] },
+                "peak_rss_mb": { "type": ["number", "null"] },
+                "avg_package_w": { "type": ["number", "null"] },
+                "energy_j": { "type": ["number", "null"] },
                 "cpu_temp_c": {
                   "type": "object",
                   "properties": {
-                    "start": { "type": "number" },
-                    "mid": { "type": "number" },
-                    "end": { "type": "number" }
+                    "start": { "type": ["number", "null"] },
+                    "mid": { "type": ["number", "null"] },
+                    "end": { "type": ["number", "null"] }
                   }
                 },
-                "throttled": { "type": "boolean" },
+                "throttled": { "type": ["boolean", "null"] },
+                "error": { "type": "string" },
                 "extra": { "type": "object", "description": "workload-specific fields" }
               }
             }

@@ -87,6 +87,10 @@ How to read it:
 ./workloads/runtime/docker_build_rust/run.sh --variant cold   # ~1-3 min
 ```
 
+Storage tests use the same logical fio profiles across platforms, but native I/O engines differ
+(`posixaio` on macOS, `libaio` on Linux). Each result records the engine, scratch path,
+filesystem, mount point, and fio job parameters. See [docs/storage.md](./docs/storage.md).
+
 ### Windows (probe + self-test only until M5)
 
 ```powershell
