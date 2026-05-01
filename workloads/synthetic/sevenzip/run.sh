@@ -65,10 +65,15 @@ tot_line="$(grep -E '^Tot:' <<<"$out" | tail -n1 || true)"
 compress_mips=""
 decompress_mips=""
 total_mips=""
+# p7zip 17.x format:
+#   Avr:             722   6569  47398  |              819   4908  40215
+#   Tot:             770   5738  43807
+# Fields: $1=Avr:/Tot:, then Usage% R/U Rating (compression), then `|` separator,
+# then Usage% R/U Rating (decompression). Total MIPS on Tot is $4.
 if [[ -n "$avr_line" ]]; then
-  # Cols after "Avr:" => CU CR CompSpeedKBs CompRatingMIPS DU DR DecompSpeedKBs DecompRatingMIPS
-  compress_mips="$(awk '{print $5}' <<<"$avr_line")"
-  decompress_mips="$(awk '{print $9}' <<<"$avr_line")"
+  compress_mips="$(awk '{print $4}' <<<"$avr_line")"
+  # Decompression rating is on the right of the `|` pipe; locate it.
+  decompress_mips="$(awk '{ for (i=1;i<=NF;i++) if ($i=="|") { print $(NF); exit } }' <<<"$avr_line")"
 fi
 if [[ -n "$tot_line" ]]; then
   total_mips="$(awk '{print $4}' <<<"$tot_line")"

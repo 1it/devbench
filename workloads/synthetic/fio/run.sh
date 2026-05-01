@@ -34,6 +34,22 @@ done
 mkdir -p "$scratch"
 
 # Per-profile fio args, all writing to $scratch/fiotest.
+# We use --output=<file> rather than capturing stdout, because fio writes
+# advisory notes to stdout (e.g. "note: both iodepth >= 1 and synchronous I/O
+# engine are selected, queue depth will be capped at 1") that break JSON parsing
+# when iodepth > 1 is combined with the default sync ioengine.
+#
+# On macOS we use the posixaio ioengine so iodepth > 1 actually does what users
+# expect; on linux libaio is preferred.
+case "$(uname -s)" in
+  Darwin) ioengine="posixaio" ;;
+  Linux)  ioengine="libaio"   ;;
+  *)      ioengine="psync"    ;;
+esac
+
+tmpjson="$(mktemp)"
+trap 'rm -f "$tmpjson" "$scratch/fiotest"' EXIT
+
 common_args=(
   "--name=devbench"
   "--filename=$scratch/fiotest"
@@ -42,9 +58,11 @@ common_args=(
   "--time_based"
   "--group_reporting"
   "--output-format=json"
-  "--direct=1"    # bypass page cache for honest numbers
+  "--output=$tmpjson"
+  "--direct=1"
   "--thread"
   "--ramp_time=2s"
+  "--ioengine=$ioengine"
 )
 
 case "$profile" in
@@ -76,13 +94,10 @@ case "$profile" in
   *) die "unknown profile: $profile (expected 4k_qd1|seq|mixed)" ;;
 esac
 
-log_info "fio profile=$profile size=$size runtime=${runtime}s scratch=$scratch"
-
-tmpjson="$(mktemp)"
-trap 'rm -f "$tmpjson" "$scratch/fiotest"' EXIT
+log_info "fio profile=$profile size=$size runtime=${runtime}s scratch=$scratch ioengine=$ioengine"
 
 t0="$(date +%s.%N 2>/dev/null || python3 -c 'import time;print(time.time())')"
-fio "${common_args[@]}" "${args[@]}" > "$tmpjson"
+fio "${common_args[@]}" "${args[@]}" >/dev/null
 t1="$(date +%s.%N 2>/dev/null || python3 -c 'import time;print(time.time())')"
 wall_s="$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.3f", b-a}')"
 
