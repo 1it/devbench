@@ -16,7 +16,7 @@ dev work?"
 4. **Fair to both camps** — native binaries on each arch, separate "emulation tax" category for
    Rosetta/Prism runs.
 5. **Report ratios, not just absolute numbers** — cold vs warm, `-j1` vs `-jN`, plugged vs
-   battery, perf vs perf/W.
+   battery, perf vs perf/W, and baseline-normalized aggregate scores.
 
 ## Non-goals
 
@@ -214,7 +214,8 @@ Publishing at least two data points per machine (plugged + battery where applica
 - Per-workload scripts under `workloads/<name>/` with `run.sh` + `run.ps1` (or single portable script).
 - Per-OS bootstrap installing toolchains at pinned versions (`scripts/{linux,macos,windows}/bootstrap.*`).
 - JSON results schema in `docs/schema.json`.
-- Aggregator `scripts/common/aggregate.py` → merges runs into a single CSV + markdown report.
+- Aggregator `scripts/common/aggregate.py` plus `scripts/compare.sh` → merges runs into JSON,
+  CSV, markdown, and HTML reports with baseline-normalized scores.
 - Optional HTML dashboard (Vega-Lite spec) for visual comparison.
 - `LICENSE` = **Apache-2.0** (permissive, compatible with all deps).
 
@@ -246,10 +247,11 @@ Each run emits `results/<hostname>-<YYYYMMDD-HHMMSS>/run.json`:
 - **M3** — Tier 1 synthetic suite end-to-end on macOS + Linux (hyperfine-wrapped).
 - **M4** — Tier 2 compile suite (LLVM + ripgrep + TypeScript 6 + tsgo 7) on macOS + Linux.
 - **M5** — Windows parity (PowerShell wrappers, winget bootstrap, Windows arm64 first-class).
-- **M6** — Tier 3 runtime + Tier 4 dev-day.
+- **M6** — Tier 3 runtime + Tier 4 dev-day. *(Tier 3 done; Tier 4 pending)*
 - **M7** — Tier 6 dev-velocity (uv/pnpm/bun/ruff/vite).
 - **M8** — Tier 7 local AI inference (llama.cpp + MLX + whisper).
-- **M9** — Aggregator, markdown comparison report, reference-machine table.
+- **M9** — Aggregator, markdown comparison report, reference-machine table. *(Aggregator done;
+  reference-machine table pending)*
 - **M10** — HTML dashboard, docs, first public results post.
 
 ## Open questions

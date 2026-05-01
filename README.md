@@ -10,7 +10,7 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 
 ## Status
 
-**M6 — Tiers 1–3 runnable.** Tier 3 adds pandas pytest, Vite test suite, Renaissance JVM, multi-stage Docker Rust build. Next: Windows orchestrator (M5), Tier 6/7 (dev-velocity + local AI).
+**M6 partial — Tiers 1–3 runnable.** Tier 3 adds pandas pytest, Vite test suite, Renaissance JVM, multi-stage Docker Rust build. Machine comparison now has a normalized aggregator. Next: Windows orchestrator (M5 parity), Tier 4 dev-day, Tier 6/7 (dev-velocity + local AI).
 
 ### Full pipeline (macOS / Linux / WSL)
 
@@ -48,6 +48,23 @@ python3 scripts/common/report.py results/AVP2XXFN6C5-20260501-153829/run.json \
 python3 scripts/common/report.py results --out results/report.html
 ```
 
+For cross-machine comparison and aggregate scores, use the aggregator:
+
+```bash
+./scripts/compare.sh results \
+  --baseline results/AVP2XXFN6C5-20260501-153829/run.json \
+  --out-dir results/aggregate
+# -> results/aggregate/scores.json
+# -> results/aggregate/summary.csv
+# -> results/aggregate/comparison.md
+# -> results/aggregate/comparison.html
+```
+
+By default, comparison uses the newest run for each machine to avoid duplicate host entries.
+Use `--run-selection aggregate` to combine repeated same-machine runs, or
+`--run-selection session` to keep each config/session group separate. Pass `--open` to open the
+HTML comparison after generation.
+
 How to read it:
 
 - Bars show the median across iterations.
@@ -56,6 +73,9 @@ How to read it:
 - Tier 1 cards use workload scores where higher is better.
 - Tier 2/3 cards use wall-clock time where lower is better.
 - Failed iterations are excluded from medians and shown as `failed=N`.
+- Aggregate scores are relative to the chosen baseline: `100` is baseline-equivalent,
+  `120` is 20% faster across the common weighted workload basket. See
+  [docs/scoring.md](./docs/scoring.md).
 
 ### Runnable building blocks
 
