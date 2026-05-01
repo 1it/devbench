@@ -4,8 +4,9 @@
 # Usage:
 #   scripts/run.sh [--tier 1[,2,3]] [--iterations N] [--scratch DIR]
 #                  [--output DIR] [--skip-self-test] [--ambient-seconds S]
+#                  [--no-report] [--no-open-report] [--report-scope current|all]
 #
-# Produces a run.json under results/<hostname>-<YYYYMMDD-HHMMSS>/.
+# Produces run.json and report.html under results/<hostname>-<YYYYMMDD-HHMMSS>/.
 #
 # NOTE: Windows has its own scripts/run.ps1 (not yet written; M5).
 
@@ -22,6 +23,9 @@ scratch="${REPO_ROOT}/workloads/_scratch"
 output_root="${REPO_ROOT}/results"
 run_self_test=1
 ambient_s=10
+generate_report=1
+open_report=1
+report_scope="current"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +35,9 @@ while [[ $# -gt 0 ]]; do
     --output)            output_root="$2";   shift 2 ;;
     --skip-self-test)    run_self_test=0;    shift ;;
     --ambient-seconds)   ambient_s="$2";     shift 2 ;;
+    --no-report)         generate_report=0;  open_report=0; shift ;;
+    --no-open-report)    open_report=0;      shift ;;
+    --report-scope)      report_scope="$2";  shift 2 ;;
     -h|--help)
       grep -E '^#( |$)' "$0" | sed 's/^# \{0,1\}//'
       exit 0
@@ -44,6 +51,36 @@ case "$os" in
   macos|linux|wsl) : ;;
   *) die "unsupported os: $os (use scripts/run.ps1 on Windows)" ;;
 esac
+
+case "$report_scope" in
+  current|all) : ;;
+  *) die "unknown --report-scope: $report_scope (expected current|all)" ;;
+esac
+
+open_html_report() {
+  local report_file="$1"
+  case "$os" in
+    macos)
+      command -v open >/dev/null 2>&1 || return 1
+      open "$report_file" >/dev/null 2>&1 &
+      ;;
+    linux)
+      [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]] || return 1
+      command -v xdg-open >/dev/null 2>&1 || return 1
+      xdg-open "$report_file" >/dev/null 2>&1 &
+      ;;
+    wsl)
+      if command -v wslview >/dev/null 2>&1; then
+        wslview "$report_file" >/dev/null 2>&1 &
+      elif command -v explorer.exe >/dev/null 2>&1; then
+        explorer.exe "$(wslpath -w "$report_file")" >/dev/null 2>&1 &
+      else
+        return 1
+      fi
+      ;;
+    *) return 1 ;;
+  esac
+}
 
 probe_script="$SCRIPT_DIR/$os/probe.sh"
 [[ "$os" == "wsl" ]] && probe_script="$SCRIPT_DIR/linux/probe.sh"
@@ -172,4 +209,37 @@ final_json="$(jq -n \
 out_file="$out_dir/run.json"
 echo "$final_json" > "$out_file"
 log_info "wrote $out_file"
+
+if [[ "$generate_report" -eq 1 ]]; then
+  report_script="$SCRIPT_DIR/common/report.py"
+  if [[ -f "$report_script" ]] && command -v python3 >/dev/null 2>&1; then
+    case "$report_scope" in
+      current)
+        report_input="$out_file"
+        report_file="$out_dir/report.html"
+        ;;
+      all)
+        report_input="$output_root"
+        report_file="$output_root/report.html"
+        ;;
+    esac
+
+    log_info "generating report: $report_file"
+    if python3 "$report_script" "$report_input" --out "$report_file" >/tmp/devbench-report.log 2>&1; then
+      log_info "wrote $report_file"
+      if [[ "$open_report" -eq 1 ]]; then
+        if open_html_report "$report_file"; then
+          log_info "opened $report_file"
+        else
+          log_warn "could not open report automatically; open manually: $report_file"
+        fi
+      fi
+    else
+      log_warn "report generation failed; see /tmp/devbench-report.log"
+    fi
+  else
+    log_warn "skipped report generation (missing python3 or $report_script)"
+  fi
+fi
+
 echo "$out_file"

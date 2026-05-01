@@ -21,9 +21,41 @@ See [PLAN.md](./PLAN.md) for design, methodology, and milestones.
 ./scripts/run.sh --tier 3 --iterations 3               # runtime/tests, ~20-40 min
 ./scripts/run.sh --tier 1,2,3 --iterations 2           # everything that exists today
 # -> results/<hostname>-<UTC timestamp>/run.json
+# -> results/<hostname>-<UTC timestamp>/report.html
 ```
 
 > **Tier 2 note**: use `--iterations 2` (not 3) unless you have all day. LLVM cold_jN alone is ~15–30 min per iteration. For a first signal run just the fast ones with `--tier 2` after editing the spec list in `scripts/run.sh`, or run a single workload directly.
+
+By default `scripts/run.sh` generates and opens an HTML report for the run that just completed.
+Useful report flags:
+
+```bash
+./scripts/run.sh --tier 1 --iterations 3 --no-open-report       # generate report, don't open browser
+./scripts/run.sh --tier 1 --iterations 3 --no-report            # JSON only
+./scripts/run.sh --tier 1 --iterations 3 --report-scope all     # compare all results/*/run.json files
+```
+
+### Reporting
+
+The reporter can also be run directly against either one `run.json` file or a results directory:
+
+```bash
+# Single run report
+python3 scripts/common/report.py results/AVP2XXFN6C5-20260501-153829/run.json \
+  --out results/AVP2XXFN6C5-20260501-153829/report.html
+
+# Comparison report across all runs under results/
+python3 scripts/common/report.py results --out results/report.html
+```
+
+How to read it:
+
+- Bars show the median across iterations.
+- The translucent range overlay shows min to max.
+- `CV` is coefficient of variation; yellow means noisy (`>5%`), red means very noisy (`>10%`).
+- Tier 1 cards use workload scores where higher is better.
+- Tier 2/3 cards use wall-clock time where lower is better.
+- Failed iterations are excluded from medians and shown as `failed=N`.
 
 ### Runnable building blocks
 
