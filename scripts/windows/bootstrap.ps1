@@ -44,8 +44,8 @@ if ($Baseline) {
         '7zip.7zip'
     )
     foreach ($p in $pkgs) { Install-WingetPackage -Id $p }
-    # sysbench/stress-ng are not available natively on Windows; use WSL for those tiers.
-    Write-Warn2 'sysbench / stress-ng: install inside WSL2 for tests that require them.'
+    # stress-ng is not available natively on Windows; use WSL for those tiers.
+    Write-Warn2 'stress-ng: install inside WSL2 for tests that require it.'
 }
 
 if ($Toolchains) {

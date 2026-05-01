@@ -46,7 +46,7 @@ brew_install_if_missing() {
 
 if [[ $want_baseline -eq 1 ]]; then
   log_info "--- baseline ---"
-  for p in jq hyperfine gnu-time coreutils fio sysbench stress-ng p7zip git openssl@3 fd ripgrep; do
+  for p in jq hyperfine gnu-time coreutils fio stress-ng p7zip git openssl@3 fd ripgrep; do
     brew_install_if_missing "$p"
   done
 fi

@@ -45,11 +45,11 @@ if [[ $want_baseline -eq 1 ]]; then
   log_info "--- baseline ---"
   case "$pm" in
     apt)
-      install_pkgs jq hyperfine time fio sysbench stress-ng p7zip-full git openssl ca-certificates \
+      install_pkgs jq hyperfine time fio stress-ng p7zip-full git openssl ca-certificates \
                    fd-find ripgrep dmidecode util-linux findutils gawk sysstat curl
       ;;
     dnf)
-      install_pkgs jq hyperfine time fio sysbench stress-ng p7zip git openssl \
+      install_pkgs jq hyperfine time fio stress-ng p7zip git openssl \
                    fd-find ripgrep dmidecode util-linux findutils gawk sysstat curl
       ;;
   esac

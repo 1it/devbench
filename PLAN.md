@@ -83,8 +83,8 @@ Purpose: sanity check, cross-reference with public numbers.
 
 | Test | What it measures | Tool |
 |---|---|---|
-| CPU ST | single-thread integer | `sysbench cpu --threads=1` |
-| CPU MT | all-core integer scaling | `sysbench cpu --threads=$(nproc)` |
+| CPU ST | single-thread integer | `stress-ng --cpu 1 --cpu-method prime` |
+| CPU MT | all-core integer scaling | `stress-ng --cpu $(nproc) --cpu-method prime` |
 | Memory bandwidth | stream copy/triad | STREAM (custom build) |
 | Memory latency | random load | `mlc` (linux x86) / `stress-ng --memrate` fallback |
 | Compression MIPS | cross-arch reference | `7z b -mmt=on` and `-mmt1` |
@@ -184,7 +184,7 @@ Machine. Linux uses native dockerd; Windows uses Docker Desktop (WSL2 backend) +
 
 ## Calibration & self-test
 
-- `scripts/common/self_test.sh` runs the suite on a known synthetic workload (e.g., `sysbench` + a
+- `scripts/common/self_test.sh` runs the suite on a known synthetic workload (e.g., `stress-ng` + a
   10-second sleep + a 100 MB file hash) 5 times. If stddev > 3% it fails and tells the user to
   re-run `docs/preflight.md`. Required before any real run.
 - A `--dry-run` flag that verifies every tool is installed at the pinned version without running.

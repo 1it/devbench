@@ -89,6 +89,20 @@ def get_meta(test_id: str):
 
 
 def metric_value(result: dict, iteration: dict) -> float | None:
+    test_id = result["id"]
+    extra = iteration.get("extra") or {}
+    if test_id.startswith("synthetic.sysbench_cpu"):
+        tool = extra.get("tool")
+        events_per_sec = extra.get("events_per_sec")
+        # Homebrew sysbench 1.0.20 on current macOS can report tens of
+        # millions of prime events/s with near-zero latency and no dependence
+        # on --cpu-max-prime. That is not comparable to Linux sysbench output,
+        # so legacy runs with impossible rates are rejected instead of poisoning
+        # cross-machine scores. New runs use stress-ng under the same workload id.
+        if tool == "sysbench-cpu" and isinstance(events_per_sec, (int, float)):
+            if events_per_sec > 1_000_000:
+                return None
+
     extractor = get_extractor(result["id"])
     if extractor:
         try:

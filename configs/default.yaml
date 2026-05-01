@@ -92,7 +92,7 @@ versions:
   swift_min: "6.3"
   docker_min: "29.4.1"
 
-  sysbench_min: "1.0.20"
+  stress_ng_min: "0.17.0"
   fio_min: "3.37"
   sevenzip_min: "23.01"
   ninja_min: "1.12.0"

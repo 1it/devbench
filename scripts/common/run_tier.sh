@@ -9,6 +9,8 @@
 # Example:
 #   synthetic.sysbench_cpu.st|1|/tmp/devbench|workloads/synthetic/sysbench_cpu/run.sh --threads 1
 #
+# (The `sysbench_cpu` id is preserved for result-history continuity; the workload now drives stress-ng.)
+#
 # Each spec is executed --iterations times; its stdout (one iteration JSON per run) is
 # aggregated into a single results entry.
 
